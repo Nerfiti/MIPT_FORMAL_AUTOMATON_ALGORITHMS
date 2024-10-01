@@ -77,6 +77,9 @@ void RecursiveDraw(const Automaton& automaton, size_t vertex, std::ofstream& dot
                                 ? std::string(1, alpha_neighbours.first)
                                 : std::string("\"[") + std::to_string(alpha_neighbours.first) + "]\"";
 
+            if (alpha_neighbours.first == 0)
+                label = "\u03B5";
+
             dot_file << vertex << " -> " << neighbour << " [label=" << label << "]" << std::endl;
             RecursiveDraw(automaton, neighbour, dot_file, processed_vertices);
         }
