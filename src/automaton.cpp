@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "automaton.hpp"
 
 bool Automaton::AddState(size_t state_number)
@@ -13,8 +15,8 @@ bool Automaton::AddState(size_t state_number)
 void Automaton::SetStates(size_t numberOfStates)
 {
     states_.clear();
+    number_of_states_ = 0;
 
-    number_of_states_ = numberOfStates;
     for (size_t i = 0; i < numberOfStates; ++i)
         AddState(i);
 }
@@ -26,7 +28,11 @@ bool Automaton::AddEdge(size_t from, size_t to, alpha_t alpha)
     if (!DoesStateExist(from) || !DoesStateExist(to) || DoesEdgeExist(from, to, alpha))
         return false;
 
-    state_t state_from = states_[from];
+    state_t& state_from = states_[from];
+
+    if (!state_from.contains(alpha))
+        state_from[alpha] = {};
+
     state_from[alpha].insert(to);
 
     return true;
@@ -74,7 +80,11 @@ void Automaton::MarkStateAsFinal(size_t state)
 
 bool Automaton::RemoveStateFromFinals(size_t state)
 {
+    if (!IsStateFinal(state))
+        return false;
+
     final_states_.erase(state);
+    return true;
 }
 
 bool Automaton::IsStateFinal(size_t state) const
