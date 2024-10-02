@@ -12,13 +12,26 @@ namespace
 
     const char *Graph_end = "}";
 
-    const char *Image_path = "./graph/Automaton.svg";
+    const char *Image_path = "./graph/Automaton";
     const char *Image_type = "svg";
-    const char *Dot_file_path = "./graph/automaton.dot";
+    const char *Dot_file_path = "./graph/automaton";
+    const char *Dot_file_type = "dot";
+
+    size_t number_of_images = 0;
+
+    std::string GetImagePath()
+    {
+        return std::string(Image_path) + "_" + std::to_string(number_of_images) + "." + Image_type;
+    }
+
+    std::string GetDotFilePath()
+    {
+        return std::string(Dot_file_path) + "_" + std::to_string(number_of_images) + "." + Dot_file_type;
+    }
 
     std::string GetDrawCommand()
     {
-        return std::string("dot -v -T") + Image_type + " -o" + Image_path + " " + Dot_file_path + " > /dev/null 2>&1";
+        return std::string("dot -v -T") + Image_type + " -o" + GetImagePath() + " " + GetDotFilePath() + " > /dev/null 2>&1";
     };
 };
 
@@ -29,7 +42,7 @@ void RecursiveDraw(const Automaton& automaton, size_t vertex, std::ofstream& dot
 
 void AutomatonDrawer::GenerateImage(const Automaton& automaton)
 {
-    std::ofstream dot_file(Dot_file_path);
+    std::ofstream dot_file(GetDotFilePath());
     if (!dot_file)
     {
         std::cout << "Can't open file for graph description: \"" << Dot_file_path << "\"\n";
@@ -46,8 +59,11 @@ void AutomatonDrawer::GenerateImage(const Automaton& automaton)
     if (system(GetDrawCommand().c_str()) == Command_execution_failure)
     {
         std::cout << "Can't open file for graph image: \"" << Image_path << "\". File type: \"" << Image_type << "\".\n";
+        system((std::string("rm ") + GetDotFilePath()).c_str());
         return;
     }
+
+    ++number_of_images;
 }
 
 void DrawAutomaton(const Automaton& automaton, std::ofstream& dot_file)
