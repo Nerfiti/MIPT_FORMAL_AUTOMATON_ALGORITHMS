@@ -1,0 +1,5 @@
+Automaton constructor to guarantee non-empty ones
+Minimization algorithm
+Removing epsilon transitions
+Regular expressions from Complete DFA
+Tests

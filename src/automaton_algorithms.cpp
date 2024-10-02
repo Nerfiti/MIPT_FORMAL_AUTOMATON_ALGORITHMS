@@ -16,14 +16,23 @@ void AutomatonTransformer::MinimizeCompleteDFA(Automaton &automaton)
 
 void AutomatonTransformer::MakeDFAComplete(Automaton &automaton)
 {
-    size_t garbage_state = automaton.AddState();
+    bool need_garbage = true;
+    size_t garbage_state = 0;
 
-    for (auto vertex : automaton.GetStateNumbers())
+    auto vertices = automaton.GetStateNumbers();
+    for (auto vertex : vertices)
     {
         for (auto alpha : automaton.GetAlphabet())
         {
             if (!automaton.CanTransit(vertex, alpha))
+            {
+                if (need_garbage)
+                {
+                    garbage_state = automaton.AddState();
+                    need_garbage = false;
+                }
                 automaton.AddEdge(vertex, garbage_state, alpha);
+            }
         }
     }
 }
@@ -65,6 +74,9 @@ Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
                     is_final = is_final || automaton.IsStateFinal(neighbour);
                 }
             }
+
+            if (new_state.empty())
+                continue;
 
             if (!new_indices.contains(new_state))
             {

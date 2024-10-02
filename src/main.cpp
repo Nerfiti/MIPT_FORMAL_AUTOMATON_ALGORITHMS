@@ -3,15 +3,12 @@
 #include "automaton_algorithms.hpp"
 #include "automaton_drawer.hpp"
 
-#define TEST(cond) \
-    if (!cond) std::cerr << #cond << " is incorrect.\n"
-
 int main()
 {
     Automaton automaton;
     automaton.SetAlphabet({'a', 'b'});
 
-    automaton.SetStates(4);
+    automaton.SetStates(5);
     automaton.SetStartState(0);
 
     automaton.AddEdge(0, 0, 'a');
@@ -26,6 +23,7 @@ int main()
     AutomatonDrawer::GenerateImage(automaton);
 
     auto DFA = AutomatonTransformer::GetDFAFromNFA(automaton);
+    AutomatonTransformer::MakeDFAComplete(DFA);
     AutomatonDrawer::GenerateImage(DFA);
 
     return 0;

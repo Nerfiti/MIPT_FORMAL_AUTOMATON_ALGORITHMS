@@ -71,9 +71,12 @@ void DrawAutomaton(const Automaton& automaton, std::ofstream& dot_file)
     auto start_state = automaton.GetStartState();
     dot_file << "fictitious -> " << start_state << std::endl;
 
-    for (auto& final_state : automaton.GetFinalStates())
-        dot_file << final_state << " [fillcolor=red, style=filled]\n";
-
+    for (auto& state : automaton.GetStateNumbers())
+    {
+        dot_file << state 
+                 << (automaton.IsStateFinal(state) ? " [fillcolor=red, style=filled]" : "") 
+                 << "\n";
+    }
     std::set<size_t> processed_vertices;
 
     RecursiveDraw(automaton, start_state, dot_file, processed_vertices);

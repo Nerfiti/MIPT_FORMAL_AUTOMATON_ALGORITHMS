@@ -9,7 +9,7 @@ size_t Automaton::AddState(size_t state_number)
         if (existent_states_.empty())
             state_number = 0;
         else
-            state_number = *existent_states_.cbegin() + 1;
+            state_number = *existent_states_.rbegin() + 1;
     }
 
     existent_states_.insert(state_number);
@@ -31,6 +31,13 @@ void Automaton::SetStates(size_t numberOfStates)
 
 void Automaton::RemoveState(size_t state_number)
 {
+    if (state_number == start_state_)
+    {
+        std::cout << "Can't remove start state. Please, change other state as start and try again";
+        return;
+    }
+
+    SetFinal(state_number, false);
     existent_states_.erase(state_number);
     states_.erase(state_number);
 
