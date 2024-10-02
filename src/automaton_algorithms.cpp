@@ -28,13 +28,6 @@ void AutomatonTransformer::MakeDFAComplete(Automaton &automaton)
     }
 }
 
-static void DEBUG_SET_PRINT(const std::set<size_t> &set) 
-{ 
-    size_t digits = 1;
-    for (auto item : set) digits += printf("%d", item);
-    while (digits <= 10) { printf(" "); digits++; }
-}
-
 Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
 {
     Automaton DFA;
@@ -52,19 +45,10 @@ Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
     std::queue<size_t> states_queue;
     states_queue.push(0);
 
-    //-----------------------------------
-    //FOR DEBUG ONLY
-    //-----------------------------------
-    printf("| %10.10d | %10.10c | %10.10c | \n", 0, 'a', 'b');
-    //-----------------------------------
-
     while (!states_queue.empty())
     {
         size_t state = states_queue.front();
         states_queue.pop();
-        printf("| ");
-        DEBUG_SET_PRINT(old_indices[state]);
-        printf(" | ");
         for (auto alpha : automaton.GetAlphabet())
         {
             std::set<size_t> new_state = {};
@@ -81,9 +65,6 @@ Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
                     is_final = is_final || automaton.IsStateFinal(neighbour);
                 }
             }
-
-            DEBUG_SET_PRINT(new_state);
-            printf(" | ");
 
             if (!new_indices.contains(new_state))
             {
@@ -102,7 +83,6 @@ Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
                 DFA.AddEdge(state, target, alpha);
             }
         }
-        printf("\n");
     }
 
     return DFA;
