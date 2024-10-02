@@ -3,23 +3,31 @@ rankdir=LR
 fictitious [shape=point, label="", width=0, height=0]
 
 fictitious -> 0
-0 [fillcolor=red, style=filled]
-1 [fillcolor=red, style=filled]
+0
+1
 2 [fillcolor=red, style=filled]
-3 [fillcolor=red, style=filled]
-4 [fillcolor=red, style=filled]
+3
+4
 5 [fillcolor=red, style=filled]
 6
+7
+8 [fillcolor=red, style=filled]
 0 -> 2 [label=b]
 2 -> 6 [label=b]
-2 -> 4 [label=a]
-4 -> 6 [label=b]
-4 -> 6 [label=a]
+6 -> 2 [label=b]
+6 -> 2 [label=a]
+2 -> 5 [label=a]
+5 -> 8 [label=a]
+8 -> 8 [label=b]
+8 -> 8 [label=a]
+5 -> 6 [label=b]
 0 -> 1 [label=a]
-1 -> 3 [label=b]
-3 -> 2 [label=b]
-3 -> 5 [label=a]
-5 -> 3 [label=b]
-5 -> 1 [label=a]
-1 -> 1 [label=a]
+1 -> 4 [label=b]
+4 -> 2 [label=b]
+4 -> 1 [label=a]
+1 -> 3 [label=a]
+3 -> 6 [label=b]
+3 -> 7 [label=a]
+7 -> 8 [label=b]
+7 -> 7 [label=a]
 }
