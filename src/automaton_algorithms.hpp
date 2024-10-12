@@ -4,6 +4,7 @@
 
 namespace AutomatonTransformer
 {
+    void RemoveEpsilonTransitions(Automaton &automaton);
     void InverseCompleteDFA(Automaton &automaton);
     void MinimizeCompleteDFA(Automaton &automaton);
     void MakeDFAComplete(Automaton &automaton);

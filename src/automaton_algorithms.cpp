@@ -4,6 +4,13 @@
 
 #include "automaton_algorithms.hpp"
 
+void AutomatonTransformer::RemoveEpsilonTransitions(Automaton &automaton)
+{
+    bool old_flag = automaton.GetOptimizeEpsilonsFlag();
+    automaton = Automaton::buildFromAnother(automaton, true);
+    automaton.SetOptimizeEpsilonsFlag(old_flag);
+}
+
 void AutomatonTransformer::InverseCompleteDFA(Automaton &automaton)
 {
     for (auto vertex : automaton.GetStateNumbers())
@@ -39,15 +46,14 @@ void AutomatonTransformer::MakeDFAComplete(Automaton &automaton)
 
 Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
 {
-    Automaton DFA;
-    DFA.SetAlphabet(automaton.GetAlphabet());
-    DFA.AddState(0);
-    DFA.SetStartState(0);
+    Automaton DFA(automaton.GetAlphabet());
     DFA.SetFinal(0, automaton.IsStateFinal(0));
 
     size_t cur_max_index = 0;
 
-    std::unordered_map<std::set<size_t>, size_t, decltype([](const std::set<size_t>&) { return 0; })> new_indices;
+    std::unordered_map<std::set<size_t>, size_t, decltype([](const std::set<size_t> &)
+                                                          { return 0; })>
+        new_indices;
     new_indices.insert({{0}, cur_max_index++});
     std::vector<std::set<size_t>> old_indices = {{0}};
 
@@ -126,8 +132,8 @@ Automaton AutomatonTransformer::GetMinimalCompleteDFAFromCompleteDFA(const Autom
         to_vertex_order[vertex_num] = number_of_states++;
     }
 
-    std::vector<std::vector<size_t>> factor_set(number_of_states, 
-                                                std::vector<size_t>(automaton.GetAlphabet().size() + 1, 
+    std::vector<std::vector<size_t>> factor_set(number_of_states,
+                                                std::vector<size_t>(automaton.GetAlphabet().size() + 1,
                                                                     std::numeric_limits<size_t>::max()));
 
     for (size_t i = 0; i < number_of_states; ++i)
@@ -139,7 +145,7 @@ Automaton AutomatonTransformer::GetMinimalCompleteDFAFromCompleteDFA(const Autom
 
     while (cur_classes != old_number_of_classes)
     {
-        std::cout << "Start new step.\n";
+        // std::cout << "Start new step.\n";
         old_number_of_classes = cur_classes;
 
         for (size_t i = 0; i < number_of_states; ++i)
@@ -152,18 +158,18 @@ Automaton AutomatonTransformer::GetMinimalCompleteDFAFromCompleteDFA(const Autom
             }
         }
 
-        for (size_t vertex = 0; vertex < number_of_states; ++vertex)
-        {
-            for (size_t i = 0; i <= automaton.GetAlphabet().size(); ++i)
-                std::cout << factor_set[vertex][i] << " ";
-            std::cout << "\n";
-        }
-        std::cout << "\n";
+        // for (size_t vertex = 0; vertex < number_of_states; ++vertex)
+        // {
+        //     for (size_t i = 0; i <= automaton.GetAlphabet().size(); ++i)
+        //         std::cout << factor_set[vertex][i] << " ";
+        //     std::cout << "\n";
+        // }
+        // std::cout << "\n";
 
         cur_classes = 0;
         new_classes.resize(number_of_states, std::numeric_limits<size_t>::max());
 
-        std::cout << "NEW CLASSES:\n";
+        // std::cout << "NEW CLASSES:\n";
         for (size_t current_state = 0; current_state < factor_set.size(); ++current_state)
         {
             bool new_class = true;
@@ -178,24 +184,21 @@ Automaton AutomatonTransformer::GetMinimalCompleteDFAFromCompleteDFA(const Autom
 
             if (new_class)
             {
-                std::cout << current_state << "\n";
+                // std::cout << current_state << "\n";
                 new_classes[current_state] = cur_classes++;
             }
         }
-
 
         for (size_t i = 0; i < number_of_states; ++i)
         {
             factor_set[i].resize(automaton.GetAlphabet().size() + 1, std::numeric_limits<size_t>::max());
             factor_set[i][0] = new_classes[i];
         }
-        std::cout << "Number of classes = " << cur_classes << '\n';
-        std::cout << "Old number of classes = " << old_number_of_classes << '\n';
+        // std::cout << "Number of classes = " << cur_classes << '\n';
+        // std::cout << "Old number of classes = " << old_number_of_classes << '\n';
     }
 
-    Automaton MDFA;
-    MDFA.SetAlphabet(automaton.GetAlphabet());
-    MDFA.SetStates(cur_classes);
+    Automaton MDFA(automaton.GetAlphabet(), cur_classes);
     MDFA.SetStartState(new_classes[to_vertex_order[automaton.GetStartState()]]);
 
     for (auto final : automaton.GetFinalStates())

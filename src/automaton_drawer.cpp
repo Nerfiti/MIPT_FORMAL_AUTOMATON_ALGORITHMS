@@ -37,10 +37,12 @@ namespace
 
 static int Command_execution_failure = -1;
 
-void DrawAutomaton(const Automaton& automaton, std::ofstream& dot_file);
-void RecursiveDraw(const Automaton& automaton, size_t vertex, std::ofstream& dot_file, std::set<size_t>& processed_vertices);
+static void DrawAutomaton(const Automaton& automaton, std::ofstream& dot_file, bool full);
+static void RecursiveDraw(const Automaton& automaton, size_t vertex, std::ofstream& dot_file, 
+                        std::set<size_t>& processed_vertices);
+static void DrawStateTransition(size_t from, size_t to, Automaton::alpha_t alpha, std::ofstream& dot_file);
 
-void AutomatonDrawer::GenerateImage(const Automaton& automaton)
+void AutomatonDrawer::GenerateImage(const Automaton& automaton, bool full)
 {
     std::ofstream dot_file(GetDotFilePath());
     if (!dot_file)
@@ -51,7 +53,7 @@ void AutomatonDrawer::GenerateImage(const Automaton& automaton)
 
     dot_file << Graph_start;
 
-    DrawAutomaton(automaton, dot_file);
+    DrawAutomaton(automaton, dot_file, full);
 
     dot_file << Graph_end;
     dot_file.close();
@@ -66,41 +68,61 @@ void AutomatonDrawer::GenerateImage(const Automaton& automaton)
     ++number_of_images;
 }
 
-void DrawAutomaton(const Automaton& automaton, std::ofstream& dot_file)
+void DrawAutomaton(const Automaton& automaton, std::ofstream& dot_file, bool full)
 {
     auto start_state = automaton.GetStartState();
     dot_file << "fictitious -> " << start_state << std::endl;
 
-    for (auto& state : automaton.GetStateNumbers())
+    std::set<size_t> processed_vertices;
+    if (!full)
+        return RecursiveDraw(automaton, start_state, dot_file, processed_vertices);
+
+    for (auto state : automaton.GetStateNumbers())
     {
         dot_file << state 
                  << (automaton.IsStateFinal(state) ? " [fillcolor=red, style=filled]" : "") 
                  << "\n";
     }
-    std::set<size_t> processed_vertices;
 
-    RecursiveDraw(automaton, start_state, dot_file, processed_vertices);
+    for (auto state : automaton.GetStateNumbers())
+    {
+        for (auto& alpha_neighbours : automaton.GetNeighbours(state))
+        {
+            for (auto& neighbour : alpha_neighbours.second)
+                DrawStateTransition(state, neighbour, alpha_neighbours.first, dot_file);
+        }
+    }
 }
 
 void RecursiveDraw(const Automaton& automaton, size_t vertex, std::ofstream& dot_file, std::set<size_t>& processed_vertices)
 {
     if (processed_vertices.contains(vertex))
         return;
+
+    dot_file << vertex 
+             << (automaton.IsStateFinal(vertex) ? " [fillcolor=red, style=filled]" : "") 
+             << "\n";
+
     processed_vertices.insert(vertex);
 
     for (auto& alpha_neighbours : automaton.GetNeighbours(vertex))
     {
         for (auto& neighbour : alpha_neighbours.second)
         {
-            std::string label = std::isalpha(alpha_neighbours.first)
-                                ? std::string(1, alpha_neighbours.first)
-                                : std::string("\"[") + std::to_string(alpha_neighbours.first) + "]\"";
-
-            if (alpha_neighbours.first == 0)
-                label = "\u03B5";
-
-            dot_file << vertex << " -> " << neighbour << " [label=" << label << "]" << std::endl;
+            DrawStateTransition(vertex, neighbour, alpha_neighbours.first, dot_file);
             RecursiveDraw(automaton, neighbour, dot_file, processed_vertices);
         }
     }
+}
+
+void DrawStateTransition(size_t from, size_t to, Automaton::alpha_t alpha, std::ofstream& dot_file)
+{
+    std::string label = std::isalpha(alpha)
+                        ? std::string(1, alpha)
+                        : std::string("\"[") + std::to_string(alpha) + "]\"";
+
+    if (alpha == 0)
+        label = "\u03B5";
+
+    dot_file << from << " -> " << to << " [label=" << label << "]" << std::endl;
 }

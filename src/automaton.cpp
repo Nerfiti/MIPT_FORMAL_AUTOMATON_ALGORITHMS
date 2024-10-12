@@ -2,6 +2,85 @@
 
 #include "automaton.hpp"
 
+Automaton::Automaton(const std::set<alpha_t> &alphabet, size_t number_of_states):
+    states_(),
+    number_of_states_(0),
+    start_state_(0),
+    final_states_(),
+    existent_states_(),
+    alphabet_(alphabet),
+    optimize_epsilons_(false)
+{
+    if (number_of_states == 0)
+    {
+        number_of_states = 1;
+        std::cerr << "Can't create an automation with 0 states. Number of states was set on 1.\n";
+    }
+
+    SetStates(number_of_states);
+}
+
+Automaton::Automaton(std::set<alpha_t> &&alphabet, size_t number_of_states):
+    states_(),
+    number_of_states_(0),
+    start_state_(0),
+    final_states_(),
+    existent_states_(),
+    alphabet_(std::move(alphabet)),
+    optimize_epsilons_(false)
+{
+    if (number_of_states == 0)
+    {
+        number_of_states = 1;
+        std::cerr << "Can't create an automation with 0 states. Number of states was set on 1.\n";
+    }
+
+    SetStates(number_of_states); 
+}
+
+Automaton Automaton::buildFromAnother(const Automaton &automaton, bool optimize_epsilons)
+{
+    Automaton result;
+    result.SetAlphabet(automaton.alphabet_);
+    result.SetOptimizeEpsilonsFlag(optimize_epsilons);
+
+    for (auto state : automaton.GetStateNumbers())
+    {
+        if (!result.DoesStateExist(state))
+        {
+            result.AddState(state);
+            result.SetFinal(state, automaton.IsStateFinal(state));
+        }
+        for (auto alpha : automaton.GetAlphabet())
+        {
+            if (!automaton.CanTransit(state, alpha))
+                continue;
+
+            for (auto neighbour : automaton.GetNeighbours(state).at(alpha))
+            {
+                if (!result.DoesStateExist(neighbour))
+                {
+                    result.AddState(neighbour);
+                    result.SetFinal(neighbour, automaton.IsStateFinal(neighbour));
+                }
+
+                result.AddEdge(state, neighbour, alpha);
+            }
+        }
+    }
+
+    for (auto state : automaton.GetStateNumbers())
+    {
+        if (!automaton.CanTransit(state, 0))
+            continue;
+
+        for (auto neighbour : automaton.GetNeighbours(state).at(0))
+            result.AddEdge(state, neighbour, 0);
+    }
+
+    return result;
+}
+
 size_t Automaton::AddState(size_t state_number)
 {
     if (state_number == std::numeric_limits<size_t>::max())
@@ -52,6 +131,20 @@ bool Automaton::AddEdge(size_t from, size_t to, alpha_t alpha)
 {
     if (!DoesStateExist(from) || !DoesStateExist(to) || DoesEdgeExist(from, to, alpha))
         return false;
+
+    if (alpha == 0 && optimize_epsilons_)
+    {
+        for (auto &neigh_alpha : GetNeighbours(to))
+        {
+            for (auto new_neigh : neigh_alpha.second)
+                AddEdge(from, new_neigh, neigh_alpha.first);
+        }
+
+        if (IsStateFinal(to))
+            SetFinal(from);
+
+        return true;
+    }
 
     state_t& state_from = states_[from];
 
@@ -127,6 +220,13 @@ const std::set<size_t>& Automaton::GetFinalStates() const
 }
 
 const std::set<size_t>& Automaton::GetStateNumbers() const { return existent_states_; }
+
+void Automaton::SetOptimizeEpsilonsFlag(bool optimize_epsilons)
+{
+    optimize_epsilons_ = optimize_epsilons;
+}
+
+bool Automaton::GetOptimizeEpsilonsFlag() { return optimize_epsilons_; }
 
 void Automaton::AddCharToAlphabet(Automaton::alpha_t alpha) { alphabet_.insert(alpha); }
 

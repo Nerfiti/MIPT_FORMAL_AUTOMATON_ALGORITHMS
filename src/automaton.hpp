@@ -11,6 +11,11 @@ class Automaton
         using alpha_t = short int;
         using state_t = std::unordered_map<alpha_t, std::set<size_t>>;
 
+        Automaton(const std::set<alpha_t> &alphabet, size_t number_of_states = 1);
+        Automaton(std::set<alpha_t> &&alphabet, size_t number_of_states = 1);
+
+        static Automaton buildFromAnother(const Automaton &automaton, bool optimize_epsilons);
+
         size_t AddState(size_t state_number = std::numeric_limits<size_t>::max());
         void SetStates(size_t number_of_states);
         void RemoveState(size_t state_number);
@@ -32,6 +37,9 @@ class Automaton
         bool IsStateFinal(size_t state) const;
         const std::set<size_t>& GetFinalStates() const;
 
+        void SetOptimizeEpsilonsFlag(bool optimize_epsilons);
+        bool GetOptimizeEpsilonsFlag();
+
         const std::set<size_t>& GetStateNumbers() const;
 
         void AddCharToAlphabet(alpha_t alpha);
@@ -48,4 +56,8 @@ class Automaton
         std::set<size_t> existent_states_;
 
         std::set<alpha_t> alphabet_;
+
+        bool optimize_epsilons_ = false;
+
+        Automaton() = default;
 };

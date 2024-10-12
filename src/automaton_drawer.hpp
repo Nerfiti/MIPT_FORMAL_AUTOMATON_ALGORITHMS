@@ -4,5 +4,5 @@
 
 namespace AutomatonDrawer
 {
-    void GenerateImage(const Automaton& automaton);
+    void GenerateImage(const Automaton& automaton, bool full = false);
 };
