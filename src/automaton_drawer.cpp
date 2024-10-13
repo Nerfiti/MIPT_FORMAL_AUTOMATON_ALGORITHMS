@@ -121,7 +121,7 @@ void DrawStateTransition(size_t from, size_t to, Automaton::alpha_t alpha, std::
                         ? std::string(1, alpha)
                         : std::string("\"[") + std::to_string(alpha) + "]\"";
 
-    if (alpha == 0)
+    if (alpha == Automaton::Epsilon)
         label = "\u03B5";
 
     dot_file << from << " -> " << to << " [label=" << label << "]" << std::endl;

@@ -4,13 +4,15 @@
 
 namespace AutomatonTransformer
 {
-    void RemoveEpsilonTransitions(Automaton &automaton);
-    void InverseCompleteDFA(Automaton &automaton);
-    void MinimizeCompleteDFA(Automaton &automaton);
+    void RemoveEpsTransitions(Automaton &automaton);
+    void InverseCDFA(Automaton &automaton);
+    void MinimizeCDFA(Automaton &automaton);
     void MakeDFAComplete(Automaton &automaton);
 
-    Automaton GetDFAFromNFA(const Automaton &automaton);
-    Automaton GetCompleteDFAFromDFA(const Automaton &automaton);
-    Automaton GetComplementFromCompleteDFA(const Automaton &automaton);
-    Automaton GetMinimalCompleteDFAFromCompleteDFA(const Automaton &automaton);
+    Automaton DFAFromNFA(const Automaton &automaton);
+    Automaton CDFAFromDFA(const Automaton &automaton);
+    Automaton ComplementOfCDFA(const Automaton &automaton);
+    Automaton MCDFAFromCDFA(const Automaton &automaton);
+
+    std::string RegExpr(const Automaton &automaton);
 };

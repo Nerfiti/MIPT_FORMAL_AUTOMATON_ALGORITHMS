@@ -46,9 +46,12 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "unordered_set": "cpp",
+        "map": "cpp"
     },
     "cSpell.words": [
-        "neighbours"
+        "neighbours",
+        "regauto"
     ]
 }

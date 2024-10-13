@@ -3,16 +3,29 @@
 #include <cstddef>
 #include <limits>
 #include <set>
+#include <string>
 #include <unordered_map>
 
-class Automaton
+template <class alpha_type>
+class GenericAutomaton;
+
+using Automaton = GenericAutomaton<short int>;
+using RegularAutomaton = GenericAutomaton<std::string>;
+
+template <class alpha_type>
+class GenericAutomaton
 {
     public:
-        using alpha_t = short int;
+        using alpha_t = alpha_type;
         using state_t = std::unordered_map<alpha_t, std::set<size_t>>;
 
-        Automaton(const std::set<alpha_t> &alphabet, size_t number_of_states = 1);
-        Automaton(std::set<alpha_t> &&alphabet, size_t number_of_states = 1);
+        static const alpha_t Epsilon;
+
+        GenericAutomaton(const std::set<alpha_t> &alphabet, size_t number_of_states = 1);
+        GenericAutomaton(std::set<alpha_t> &&alphabet, size_t number_of_states = 1);
+
+        template <class other_alpha>
+        GenericAutomaton(const GenericAutomaton<other_alpha> &other);
 
         static Automaton buildFromAnother(const Automaton &automaton, bool optimize_epsilons);
 
@@ -46,6 +59,8 @@ class Automaton
         void SetAlphabet(const std::set<alpha_t>& alphabet);
         const std::set<alpha_t>& GetAlphabet() const;
 
+        template <class> friend class GenericAutomaton;
+
     private:
         std::unordered_map<size_t, state_t> states_;
         size_t number_of_states_ = 0;
@@ -59,5 +74,7 @@ class Automaton
 
         bool optimize_epsilons_ = false;
 
-        Automaton() = default;
+        GenericAutomaton() = default;
 };
+
+#include "automaton_implementation.cpp"

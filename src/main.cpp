@@ -5,30 +5,28 @@
 
 int main()
 {
-    Automaton automaton({'a', 'b'}, 5);
+    Automaton automaton({'a', 'b'}, 2);
     automaton.SetFinal(1);
-    automaton.SetFinal(4);
 
     automaton.AddEdge(0, 1, 'a');
-    automaton.AddEdge(2, 2, 'b');
-    automaton.AddEdge(0, 2, 0);
-    automaton.AddEdge(2, 3, 'b');
-    automaton.AddEdge(3, 4, 0);
+    automaton.AddEdge(0, 1, 'b');
+    automaton.AddEdge(0, 1, Automaton::Epsilon);
+    automaton.AddEdge(1, 1, 'a');
 
     AutomatonDrawer::GenerateImage(automaton);
 
-    AutomatonTransformer::RemoveEpsilonTransitions(automaton);
-    AutomatonDrawer::GenerateImage(automaton);
-
-    auto MCDFA = AutomatonTransformer::GetMinimalCompleteDFAFromCompleteDFA
+    AutomatonTransformer::RemoveEpsTransitions(automaton);
+    auto MCDFA = AutomatonTransformer::MCDFAFromCDFA
                 (
-                    AutomatonTransformer::GetCompleteDFAFromDFA
+                    AutomatonTransformer::CDFAFromDFA
                     (
-                        AutomatonTransformer::GetDFAFromNFA(automaton)
+                        AutomatonTransformer::DFAFromNFA(automaton)
                     )
                 );
 
     AutomatonDrawer::GenerateImage(MCDFA, true);
+
+    std::cout << AutomatonTransformer::RegExpr(MCDFA) << "\n";
 
     return 0;
 }

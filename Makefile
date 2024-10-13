@@ -3,6 +3,7 @@ C++FLAGS = -g -O3 -D _DEBUG -ggdb3 -std=c++20 -Wall -Wextra -Weffc++ -Waggressiv
 TARGET := ./Automation.out
 
 SRC_DIR := ./src
+TEMPLATE_IMPLEMENTATIONS_DIR = $(SRC_DIR)/TemplateImplementations
 BUILD_DIR := ./build
 OBJ_DIR := $(BUILD_DIR)
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
@@ -14,7 +15,7 @@ OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_FILES))
 all: $(TARGET)
 
 debug: $(SRC_FILES)
-	g++ -g -o$(TARGET)_DEBUG $^ -std=c++20
+	g++ -g -o$(TARGET)_DEBUG $^ -std=c++20 -I$(TEMPLATE_IMPLEMENTATIONS_DIR)
 	gdb $(TARGET)_DEBUG
 
 run: all
@@ -27,4 +28,4 @@ $(TARGET): $(OBJ_FILES)
 	g++ -o $@ $^
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	g++ -c -o $@ $< -std=c++20
+	g++ -c -o $@ $< -std=c++20 -I$(TEMPLATE_IMPLEMENTATIONS_DIR)

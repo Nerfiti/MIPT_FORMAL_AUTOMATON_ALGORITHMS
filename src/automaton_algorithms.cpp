@@ -1,17 +1,18 @@
 #include <iostream>
+#include <map>
 #include <queue>
 #include <vector>
 
 #include "automaton_algorithms.hpp"
 
-void AutomatonTransformer::RemoveEpsilonTransitions(Automaton &automaton)
+void AutomatonTransformer::RemoveEpsTransitions(Automaton &automaton)
 {
     bool old_flag = automaton.GetOptimizeEpsilonsFlag();
     automaton = Automaton::buildFromAnother(automaton, true);
     automaton.SetOptimizeEpsilonsFlag(old_flag);
 }
 
-void AutomatonTransformer::InverseCompleteDFA(Automaton &automaton)
+void AutomatonTransformer::InverseCDFA(Automaton &automaton)
 {
     for (auto vertex : automaton.GetStateNumbers())
         automaton.SetFinal(vertex, !automaton.IsStateFinal(vertex));
@@ -44,16 +45,14 @@ void AutomatonTransformer::MakeDFAComplete(Automaton &automaton)
             automaton.AddEdge(garbage_state, garbage_state, alpha);
 }
 
-Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
+Automaton AutomatonTransformer::DFAFromNFA(const Automaton &automaton)
 {
     Automaton DFA(automaton.GetAlphabet());
     DFA.SetFinal(0, automaton.IsStateFinal(0));
 
     size_t cur_max_index = 0;
 
-    std::unordered_map<std::set<size_t>, size_t, decltype([](const std::set<size_t> &)
-                                                          { return 0; })>
-        new_indices;
+    std::unordered_map<std::set<size_t>, size_t, decltype([](const std::set<size_t> &) { return 0; })> new_indices;
     new_indices.insert({{0}, cur_max_index++});
     std::vector<std::set<size_t>> old_indices = {{0}};
 
@@ -106,21 +105,21 @@ Automaton AutomatonTransformer::GetDFAFromNFA(const Automaton &automaton)
     return DFA;
 }
 
-Automaton AutomatonTransformer::GetCompleteDFAFromDFA(const Automaton &automaton)
+Automaton AutomatonTransformer::CDFAFromDFA(const Automaton &automaton)
 {
     Automaton result = automaton;
     MakeDFAComplete(result);
     return result;
 }
 
-Automaton AutomatonTransformer::GetComplementFromCompleteDFA(const Automaton &automaton)
+Automaton AutomatonTransformer::ComplementOfCDFA(const Automaton &automaton)
 {
     Automaton result = automaton;
-    InverseCompleteDFA(result);
+    InverseCDFA(result);
     return result;
 }
 
-Automaton AutomatonTransformer::GetMinimalCompleteDFAFromCompleteDFA(const Automaton &automaton)
+Automaton AutomatonTransformer::MCDFAFromCDFA(const Automaton &automaton)
 {
     std::unordered_map<size_t, size_t> to_vertex_order;
     std::vector<size_t> to_vertex_number(automaton.GetNumberOfStates(), std::numeric_limits<size_t>::max());
@@ -216,4 +215,239 @@ Automaton AutomatonTransformer::GetMinimalCompleteDFAFromCompleteDFA(const Autom
     }
 
     return MDFA;
+}
+
+std::string AutomatonTransformer::RegExpr(const Automaton &automaton)
+{
+    static const char *EmptyLanguage = "[Empty language]";
+
+    auto &finals = automaton.GetFinalStates();
+    if (finals.size() == 0)
+        return EmptyLanguage;
+
+    RegularAutomaton regauto = automaton;
+    auto new_final = regauto.AddState();
+    regauto.SetFinal(new_final);
+
+    for (auto final : automaton.GetFinalStates())
+    {
+        regauto.AddEdge(final, new_final, RegularAutomaton::Epsilon);
+        regauto.SetFinal(final, false);
+    }
+
+    for (auto state : regauto.GetStateNumbers())
+    {
+        std::map<size_t, RegularAutomaton::alpha_t> transitions;
+        for (auto &alpha_neigh : regauto.GetNeighbours(state))
+        {
+            auto &alpha = alpha_neigh.first;
+
+            std::set<size_t> neighbours = {};
+            for (auto neigh : alpha_neigh.second)
+            {
+                if (transitions.contains(neigh))
+                    transitions[neigh] += std::string(" + ") + alpha;
+                else
+                    transitions[neigh] = alpha;
+
+                neighbours.insert(neigh);
+            }
+
+            for (auto neigh : neighbours)
+                regauto.RemoveEdge(state, neigh, alpha);
+        }
+
+        for (auto &[neigh, alpha] : transitions)
+            regauto.AddEdge(state, neigh, alpha);
+    }
+
+    while (regauto.GetNumberOfStates() > 2) // 2 = start and end
+    {
+        auto processing_state = regauto.GetStartState();
+
+        auto states_set = regauto.GetStateNumbers();
+        std::vector states(states_set.begin(), states_set.end());
+        std::random_shuffle(states.begin(), states.end());
+        for (auto state : states)
+        {
+            if (state != processing_state && !regauto.IsStateFinal(state))
+            {
+                processing_state = state;
+
+                break;
+            }
+        }
+        if (processing_state == regauto.GetStartState())
+            return "Error in start or final state notation.";
+
+        std::map<size_t, std::string> incoming_edges = {};
+        std::string loop = "";
+        for (auto state : regauto.GetStateNumbers())
+        {
+            for (auto &alpha_neigh : regauto.GetNeighbours(state))
+            {
+                if (alpha_neigh.second.contains(processing_state))
+                {
+                    if (state != processing_state)
+                    {
+                        incoming_edges.insert({state, alpha_neigh.first});
+                    }
+                    else
+                    {
+                        if (loop != "")
+                            return "Two or more loops in one vertex";
+
+                        loop = alpha_neigh.first;
+                    }
+                }
+            }
+        }
+
+        for (auto &income : incoming_edges)
+        {
+            for (auto &alpha_neigh : regauto.GetNeighbours(processing_state))
+            {
+                for (auto &neigh : alpha_neigh.second)
+                {
+                    auto outcome = std::make_pair(neigh, alpha_neigh.first);
+
+                    std::string new_string = "";
+                    bool empty_income = income.second == RegularAutomaton::Epsilon;
+                    bool empty_outcome = outcome.second == RegularAutomaton::Epsilon;
+                    bool empty_loop = loop == "" || loop == RegularAutomaton::Epsilon;
+
+                    if (empty_income && empty_outcome && empty_loop)
+                    {
+                        new_string = RegularAutomaton::Epsilon;
+                    }
+                    else 
+                    {
+                        if (!empty_income)
+                        {
+                            bool need_brackets = income.second.length() > 1 &&
+                                               income.second.find('+') != std::string::npos &&
+                                               (empty_outcome && empty_loop);
+
+                            if (need_brackets)
+                                new_string += "(";
+
+                            new_string += income.second;
+
+                            if (need_brackets)
+                                new_string += ")";
+                        }
+                        if (!empty_loop)
+                        {
+                            bool need_repeat = !(loop.length() == 2 && loop[1] == '*'); //TODO: think about smart check
+                            bool need_brackets = need_repeat && loop.length() > 1;
+
+                            if (need_brackets)
+                                new_string += "(";
+
+                            new_string += loop;
+
+                            if (need_brackets)
+                                new_string += ")";
+
+                            if (need_repeat)
+                                new_string += "*";
+                        }
+                        if (!empty_outcome)
+                        {
+                            bool need_brackets = outcome.second.length() > 1 &&
+                                               outcome.second.find('+') != std::string::npos &&
+                                               !(empty_income && empty_loop);
+                            if (need_brackets)
+                                new_string += "(";
+
+                            new_string += outcome.second;
+
+                            if (need_brackets) 
+                                new_string += ")";
+                        }
+                    }
+
+                    std::string existent_string = "";
+                    for (auto &tmp_alpha_neigh : regauto.GetNeighbours(income.first))
+                    {
+                        if (tmp_alpha_neigh.second.contains(outcome.first))
+                        {
+                            if (existent_string != "")
+                                return "Error: two or more edges between two vertices.";
+
+                            existent_string = tmp_alpha_neigh.first;
+                        }
+                    }
+
+                    if (existent_string == "")
+                    {
+                        regauto.RemoveEdge(income.first, outcome.first, existent_string);
+                        regauto.AddEdge(income.first, outcome.first, new_string);
+                    }
+                    else if (new_string != RegularAutomaton::Epsilon)
+                    {
+                        regauto.RemoveEdge(income.first, outcome.first, existent_string);
+                        regauto.AddEdge(income.first, outcome.first, existent_string + " + " + new_string);
+                    }
+                }
+            }
+        }
+
+        regauto.RemoveState(processing_state);
+    }
+
+    size_t start = regauto.GetStartState();
+    size_t end = *regauto.GetFinalStates().begin();
+    std::string reg_expr = "";
+    std::string start_loop = "";
+    std::string end_expr = "";
+
+    for (auto &alpha_neigh : regauto.GetNeighbours(start))
+    {
+        if (alpha_neigh.second.contains(start))
+        {
+            if (start_loop != "")
+                return "Unexpected error";
+
+            start_loop = alpha_neigh.first;
+        }
+        if (alpha_neigh.second.contains(end))
+        {
+            if (end_expr != "")
+                return "Unexpected error";
+
+            end_expr = alpha_neigh.first;
+        }
+    }
+
+    if (end_expr == "")
+        return EmptyLanguage;
+
+    if (start_loop != "" && start_loop != RegularAutomaton::Epsilon)
+    {
+        bool need_repeat = !(start_loop.length() == 2 && start_loop[1] == '*'); //TODO: think about smart check
+        bool need_brackets = need_repeat && start_loop.length() > 1;
+
+        if (need_brackets)
+            reg_expr += "(";
+
+        reg_expr += start_loop;
+
+        if (need_brackets)
+            reg_expr += ")";
+
+        if (need_repeat)
+            reg_expr += "*";
+    }
+
+    if (end_expr != RegularAutomaton::Epsilon || reg_expr == "")
+    {
+        bool need_brackets = end_expr.length() > 1 && end_expr.find('+') != std::string::npos;
+
+        if (need_brackets)
+            reg_expr += "(" + end_expr + ")";
+        else
+            reg_expr += end_expr;
+    }
+    return reg_expr;
 }
